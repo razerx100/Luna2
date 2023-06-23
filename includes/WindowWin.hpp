@@ -79,7 +79,8 @@ private:
 
 private:
 	static void MessageLoop();
-	static void CreateWindowAsync(
+	[[nodiscard]]
+	static bool CreateWindowAsync(
 		std::promise<HWND> windowPromise, WindowCreateStruct windowStruct
 	);
 	static void AsyncThreadFunc(

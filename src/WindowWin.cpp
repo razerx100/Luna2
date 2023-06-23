@@ -67,21 +67,26 @@ void* WindowWin::GetModuleInstance() const noexcept {
 void WindowWin::AsyncThreadFunc(
 	std::promise<HWND> windowPromise, WindowCreateStruct windowStruct
 ) {
-	CreateWindowAsync(std::move(windowPromise), windowStruct);
-	MessageLoop();
+	bool windowCreated = CreateWindowAsync(std::move(windowPromise), windowStruct);
+
+	if (windowCreated)
+		MessageLoop();
 }
 
 void WindowWin::MessageLoop() {
 	MSG msg{};
 	BOOL mRet = 1;
 
-	while (mRet = GetMessage(&msg, nullptr, 0u, 0u) != 0) {
+	while ((mRet = GetMessage(&msg, nullptr, 0u, 0u)) != 0) {
+		if (mRet == -1)
+			break;
+
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
 }
 
-void WindowWin::CreateWindowAsync(
+bool WindowWin::CreateWindowAsync(
 	std::promise<HWND> windowPromise, WindowCreateStruct windowStruct
 ) {
 	WndClass& wndClass = windowStruct.wndClass;
@@ -104,12 +109,14 @@ void WindowWin::CreateWindowAsync(
 
 		windowPromise.set_exception(exPtr);
 
-		return;
+		return false;
 	}
 
 	ShowWindow(windowHandle, SW_SHOWDEFAULT);
 
 	windowPromise.set_value(windowHandle);
+
+	return true;
 }
 
 LRESULT CALLBACK WindowWin::WindowProcInitial(
