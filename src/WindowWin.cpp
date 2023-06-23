@@ -34,8 +34,13 @@ WindowWin::WindowWin(std::uint32_t width, std::uint32_t height, const std::strin
 	m_windowHandle = fWindowHandle.get();
 }
 
+void WindowWin::WaitForMessageLoop() {
+	m_messageLoopExited.get();
+}
+
 WindowWin::~WindowWin() noexcept {
-	m_messageLoopExited.wait();
+	// Won't receive any exceptions, since the destructor is noexcept
+	m_messageLoopExited.get();
 }
 
 void WindowWin::SetWindowTitle(const std::string& title) {

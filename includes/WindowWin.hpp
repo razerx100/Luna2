@@ -9,6 +9,8 @@ public:
 	WindowWin(std::uint32_t width, std::uint32_t height, const std::string& name);
 	~WindowWin() noexcept;
 
+	void WaitForMessageLoop() override;
+
 	void SetWindowTitle(const std::string& title) override;
 	void SetWindowResolution(std::uint32_t width, std::uint32_t height) override;
 

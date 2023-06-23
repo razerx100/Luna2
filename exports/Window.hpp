@@ -7,6 +7,8 @@ class Window {
 public:
 	virtual ~Window() = default;
 
+	virtual void WaitForMessageLoop() = 0;
+
 	virtual void SetWindowTitle(const std::string& title) = 0;
 	virtual void SetWindowResolution(std::uint32_t width, std::uint32_t height) = 0;
 
