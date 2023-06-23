@@ -80,7 +80,7 @@ private:
 private:
 	static void MessageLoop();
 	[[nodiscard]]
-	static bool CreateWindowAsync(
+	static bool CreateWindowThreadSafe(
 		std::promise<HWND> windowPromise, WindowCreateStruct windowStruct
 	);
 	static void AsyncThreadFunc(

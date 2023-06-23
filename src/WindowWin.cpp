@@ -67,7 +67,7 @@ void* WindowWin::GetModuleInstance() const noexcept {
 void WindowWin::AsyncThreadFunc(
 	std::promise<HWND> windowPromise, WindowCreateStruct windowStruct
 ) {
-	bool windowCreated = CreateWindowAsync(std::move(windowPromise), windowStruct);
+	bool windowCreated = CreateWindowThreadSafe(std::move(windowPromise), windowStruct);
 
 	if (windowCreated)
 		MessageLoop();
@@ -86,7 +86,7 @@ void WindowWin::MessageLoop() {
 	}
 }
 
-bool WindowWin::CreateWindowAsync(
+bool WindowWin::CreateWindowThreadSafe(
 	std::promise<HWND> windowPromise, WindowCreateStruct windowStruct
 ) {
 	WndClass& wndClass = windowStruct.wndClass;
