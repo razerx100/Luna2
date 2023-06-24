@@ -89,12 +89,17 @@ private:
 		std::promise<HWND> windowPromise, WindowCreateStruct windowStruct
 	);
 
+	void ToggleFullScreenMode();
+
 private:
 	WndClass m_wndClass;
+	RECT m_windowRect;
 	HWND m_windowHandle;
 	std::uint32_t m_width;
 	std::uint32_t m_height;
 	DWORD m_windowStyle;
 	std::future<void> m_messageLoopExited;
+	bool m_minimised;
+	bool m_fullScreenMode;
 };
 #endif

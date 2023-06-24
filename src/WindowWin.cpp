@@ -2,8 +2,10 @@
 #include <Exception.hpp>
 
 WindowWin::WindowWin(std::uint32_t width, std::uint32_t height, const std::string& name)
-	: m_wndClass{}, m_windowHandle{ nullptr }, m_width{ width }, m_height{ height },
-	m_windowStyle{ WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU } {
+	: m_wndClass{}, m_windowRect{}, m_windowHandle{ nullptr }, m_width{ width },
+	m_height{ height },
+	m_windowStyle{ WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU },
+	m_minimised{ false }, m_fullScreenMode{ false } {
 
 	RECT wr{
 	.left = 0,
@@ -32,6 +34,8 @@ WindowWin::WindowWin(std::uint32_t width, std::uint32_t height, const std::strin
 	);
 
 	m_windowHandle = fWindowHandle.get();
+
+	GetWindowRect(m_windowHandle, &m_windowRect);
 }
 
 void WindowWin::WaitForMessageLoop() {
@@ -50,11 +54,17 @@ void WindowWin::SetWindowTitle(const std::string& title) {
 }
 
 void WindowWin::SetWindowResolution(std::uint32_t width, std::uint32_t height) {
+	MoveWindow(
+		m_windowHandle,
+		m_windowRect.left, m_windowRect.top,
+		width, height, TRUE
+	);
 
+	GetWindowRect(m_windowHandle, &m_windowRect);
 }
 
 bool WindowWin::IsMinimised() const noexcept {
-	return true;
+	return m_minimised;
 }
 
 float WindowWin::GetAspectRatio() const noexcept {
@@ -160,7 +170,57 @@ LRESULT WindowWin::WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 		return 0;
 	}
+	case WM_SIZE: {
+		RECT clientRect{};
+		GetClientRect(m_windowHandle, &clientRect);
+
+		if (wParam != SIZE_MINIMIZED) {
+			m_minimised = false;
+			m_width = static_cast<std::uint32_t>(clientRect.right - clientRect.left);
+			m_height = static_cast<std::uint32_t>(clientRect.bottom - clientRect.top);
+		}
+		else
+			m_minimised = true;
+
+		break;
+	}
+	case WM_SYSKEYDOWN: {
+		if ((wParam == VK_RETURN) && (lParam & 0x20000000ul)) // 29th bit checks if Alt is down
+			ToggleFullScreenMode();
+
+		break;
+	}
 	}
 
 	return DefWindowProc(hWnd, msg, wParam, lParam);
+}
+
+void WindowWin::ToggleFullScreenMode() {
+	if (m_fullScreenMode) {
+		SetWindowLong(m_windowHandle, GWL_STYLE, m_windowStyle);
+
+		SetWindowPos(
+			m_windowHandle,
+			HWND_NOTOPMOST,
+			m_windowRect.left,
+			m_windowRect.top,
+			m_windowRect.right - m_windowRect.left,
+			m_windowRect.bottom - m_windowRect.top,
+			SWP_FRAMECHANGED | SWP_NOACTIVATE
+		);
+
+		ShowWindow(m_windowHandle, SW_NORMAL);
+	}
+	else {
+		GetWindowRect(m_windowHandle, &m_windowRect);
+
+		SetWindowLong(
+			m_windowHandle, GWL_STYLE,
+			m_windowStyle & ~(WS_CAPTION | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_SYSMENU)
+		);
+
+		ShowWindow(m_windowHandle, SW_MAXIMIZE);
+	}
+
+	m_fullScreenMode = !m_fullScreenMode;
 }
