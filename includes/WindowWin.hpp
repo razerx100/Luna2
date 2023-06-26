@@ -13,7 +13,14 @@ public:
 
 	void SetWindowTitle(const std::string& title) override;
 	void SetWindowResolution(std::uint32_t width, std::uint32_t height) override;
+	void EnableCursor() noexcept override;
+	void DisableCursor() noexcept override;
+	void ConfineCursor() noexcept override;
+	void FreeCursor() noexcept override;
+	void SetWindowIcon(const std::wstring& iconPath) override;
 
+	[[nodiscard]]
+	bool IsCursorEnabled() const noexcept override;
 	[[nodiscard]]
 	bool IsMinimised() const noexcept override;
 	[[nodiscard]]
@@ -80,16 +87,22 @@ private:
 	};
 
 private:
-	static void MessageLoop();
 	[[nodiscard]]
 	static bool CreateWindowThreadSafe(
 		std::promise<HWND> windowPromise, WindowCreateStruct windowStruct
 	);
+
+	static void MessageLoop();
 	static void AsyncThreadFunc(
 		std::promise<HWND> windowPromise, WindowCreateStruct windowStruct
 	);
 
+	[[nodiscard]]
+	HICON LoadIconFromPath(const wchar_t* iconPath);
+
 	void ToggleFullScreenMode();
+	void HideCursorL() noexcept;
+	void ShowCursorL() noexcept;
 
 private:
 	WndClass m_wndClass;
@@ -101,5 +114,6 @@ private:
 	std::future<void> m_messageLoopExited;
 	bool m_minimised;
 	bool m_fullScreenMode;
+	bool m_cursorEnabled;
 };
 #endif

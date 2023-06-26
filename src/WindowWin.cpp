@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <WindowWin.hpp>
 #include <Exception.hpp>
 
@@ -5,7 +6,7 @@ WindowWin::WindowWin(std::uint32_t width, std::uint32_t height, const std::strin
 	: m_wndClass{}, m_windowRect{}, m_windowHandle{ nullptr }, m_width{ width },
 	m_height{ height },
 	m_windowStyle{ WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU },
-	m_minimised{ false }, m_fullScreenMode{ false } {
+	m_minimised{ false }, m_fullScreenMode{ false }, m_cursorEnabled{ true } {
 
 	RECT wr{
 	.left = 0,
@@ -223,4 +224,58 @@ void WindowWin::ToggleFullScreenMode() {
 	}
 
 	m_fullScreenMode = !m_fullScreenMode;
+}
+
+bool WindowWin::IsCursorEnabled() const noexcept {
+	return m_cursorEnabled;
+}
+
+void WindowWin::HideCursorL() noexcept {
+	while (ShowCursor(FALSE) >= 0);
+}
+
+void WindowWin::ShowCursorL() noexcept {
+	while (ShowCursor(TRUE) < 0);
+}
+
+void WindowWin::ConfineCursor() noexcept {
+	RECT rect{};
+	GetClientRect(m_windowHandle, &rect);
+	MapWindowPoints(m_windowHandle, nullptr, reinterpret_cast<POINT*>(&rect), 2u);
+	ClipCursor(&rect);
+}
+
+void WindowWin::FreeCursor() noexcept {
+	ClipCursor(nullptr);
+}
+
+void WindowWin::EnableCursor() noexcept {
+	m_cursorEnabled = true;
+
+	ShowCursorL();
+	FreeCursor();
+}
+
+void WindowWin::DisableCursor() noexcept {
+	m_cursorEnabled = false;
+
+	HideCursorL();
+	ConfineCursor();
+}
+
+HICON WindowWin::LoadIconFromPath(const wchar_t* iconPath) {
+	std::wstring relativePath = std::filesystem::current_path().wstring();
+
+	return reinterpret_cast<HICON>(
+		LoadImageW(
+			nullptr, (relativePath + L"\\" + iconPath).c_str(), IMAGE_ICON, 0, 0,
+			LR_DEFAULTSIZE | LR_LOADFROMFILE
+		));
+}
+
+void WindowWin::SetWindowIcon(const std::wstring& iconPath) {
+	HICON hIcon = LoadIconFromPath(iconPath.c_str());
+
+	SendMessage(m_windowHandle, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+	SendMessage(m_windowHandle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 }
